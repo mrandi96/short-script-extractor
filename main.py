@@ -151,6 +151,7 @@ def health_check():
         "ntfy_configured": bool(os.getenv("NTFY_TOPIC"))
     }
 
+@app.post("/api/extract", response_model=ExtractResponse)
 @app.post("/api/extract-script", response_model=ExtractResponse)
 def extract_script_endpoint(req: ExtractRequest, background_tasks: BackgroundTasks):
     url = req.url.strip()
