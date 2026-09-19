@@ -39,12 +39,21 @@ def download_and_transcribe(url: str, groq_api_key: Optional[str] = None) -> str
             'quiet': True,
             'no_warnings': True,
             'noplaylist': True,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'ios']
+                }
+            },
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'm4a',
                 'preferredquality': '128',
             }],
         }
+
+        cookie_file = os.getenv("YOUTUBE_COOKIES_FILE", "cookies.txt")
+        if os.path.exists(cookie_file):
+            ydl_opts['cookiefile'] = cookie_file
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:

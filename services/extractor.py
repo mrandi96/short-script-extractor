@@ -20,7 +20,16 @@ def get_video_metadata(url: str) -> Dict[str, Any]:
         'quiet': True,
         'skip_download': True,
         'no_warnings': True,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'ios']
+            }
+        },
     }
+    cookie_file = os.getenv("YOUTUBE_COOKIES_FILE", "cookies.txt")
+    if os.path.exists(cookie_file):
+        ydl_opts['cookiefile'] = cookie_file
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -39,6 +48,25 @@ def get_video_metadata(url: str) -> Dict[str, Any]:
             }
     except Exception as e:
         print(f"[Metadata] Failed to fetch metadata via yt-dlp: {e}")
+
+        # YouTube oEmbed fallback for metadata
+        if "youtube.com" in url or "youtu.be" in url:
+            try:
+                import requests
+                r = requests.get(f"https://www.youtube.com/oembed?url={url}&format=json", timeout=5)
+                if r.status_code == 200:
+                    data = r.json()
+                    return {
+                        "title": data.get("title") or "Untitled YouTube Video",
+                        "channel": data.get("author_name") or "Unknown Channel",
+                        "views": None,
+                        "likes": None,
+                        "views_formatted": "N/A",
+                        "likes_formatted": "N/A",
+                        "video_id": None,
+                    }
+            except Exception as ye:
+                print(f"[Metadata] YouTube oEmbed fallback error: {ye}")
 
         # TikTok oEmbed fallback for metadata
         if "tiktok.com" in url:
@@ -101,7 +129,20 @@ def get_native_youtube_captions(video_id: str) -> Optional[str]:
     Supports both youtube-transcript-api v1.x (instance methods) and v0.x (class methods).
     """
     try:
-        api = YouTubeTranscriptApi() if callable(YouTubeTranscriptApi) else YouTubeTranscriptApi
+        session = None
+        cookie_file = os.getenv("YOUTUBE_COOKIES_FILE", "cookies.txt")
+        if os.path.exists(cookie_file):
+            import http.cookiejar
+            import requests
+            try:
+                cj = http.cookiejar.MozillaCookieJar(cookie_file)
+                cj.load(ignore_discard=True, ignore_expires=True)
+                session = requests.Session()
+                session.cookies = cj
+            except Exception as ce:
+                print(f"[Extractor] Error loading cookie file: {ce}")
+
+        api = YouTubeTranscriptApi(http_client=session) if callable(YouTubeTranscriptApi) else YouTubeTranscriptApi
 
         # 1. Try listing transcripts
         transcript_list = None
