@@ -1,7 +1,10 @@
+import os
 import re
+import requests
 from typing import Optional, Tuple, Dict, Any
 from youtube_transcript_api import YouTubeTranscriptApi
 import yt_dlp
+
 
 def format_count(num: Optional[int]) -> str:
     if num is None:
