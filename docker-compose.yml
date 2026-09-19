@@ -1,0 +1,11 @@
+services:
+  extractor:
+    build: .
+    container_name: short-script-extractor
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./scripts:/app/scripts
