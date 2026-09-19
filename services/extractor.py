@@ -15,6 +15,15 @@ def format_count(num: Optional[int]) -> str:
         return f"{num / 1_000:.1f}K"
     return f"{num:,}"
 
+def get_cookie_path() -> Optional[str]:
+    explicit = os.getenv("YOUTUBE_COOKIES_FILE")
+    if explicit and os.path.isfile(explicit):
+        return explicit
+    for path in ["cookies.txt", "/app/cookies.txt", "/app/scripts/cookies.txt", "scripts/cookies.txt"]:
+        if os.path.isfile(path):
+            return path
+    return None
+
 def get_video_metadata(url: str) -> Dict[str, Any]:
     """
     Extracts metadata: title, channel name, views, and likes without downloading media.
@@ -29,8 +38,8 @@ def get_video_metadata(url: str) -> Dict[str, Any]:
             }
         },
     }
-    cookie_file = os.getenv("YOUTUBE_COOKIES_FILE", "cookies.txt")
-    if os.path.exists(cookie_file):
+    cookie_file = get_cookie_path()
+    if cookie_file:
         ydl_opts['cookiefile'] = cookie_file
 
     try:
@@ -133,8 +142,8 @@ def get_native_youtube_captions(video_id: str) -> Optional[str]:
     """
     try:
         session = None
-        cookie_file = os.getenv("YOUTUBE_COOKIES_FILE", "cookies.txt")
-        if os.path.exists(cookie_file):
+        cookie_file = get_cookie_path()
+        if cookie_file:
             import http.cookiejar
             import requests
             try:

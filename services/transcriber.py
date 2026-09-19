@@ -51,8 +51,9 @@ def download_and_transcribe(url: str, groq_api_key: Optional[str] = None) -> str
             }],
         }
 
-        cookie_file = os.getenv("YOUTUBE_COOKIES_FILE", "cookies.txt")
-        if os.path.exists(cookie_file):
+        from services.extractor import get_cookie_path
+        cookie_file = get_cookie_path()
+        if cookie_file:
             ydl_opts['cookiefile'] = cookie_file
 
         try:
