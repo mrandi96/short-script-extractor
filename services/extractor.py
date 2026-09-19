@@ -35,9 +35,30 @@ def get_video_metadata(url: str) -> Dict[str, Any]:
                 "likes": likes,
                 "views_formatted": format_count(views),
                 "likes_formatted": format_count(likes),
+                "video_id": str(info.get("id")) if info.get("id") else None,
             }
     except Exception as e:
-        print(f"[Metadata] Failed to fetch metadata: {e}")
+        print(f"[Metadata] Failed to fetch metadata via yt-dlp: {e}")
+
+        # TikTok oEmbed fallback for metadata
+        if "tiktok.com" in url:
+            try:
+                import requests
+                r = requests.get(f"https://www.tiktok.com/oembed?url={url}", timeout=5)
+                if r.status_code == 200:
+                    data = r.json()
+                    return {
+                        "title": data.get("title") or "Untitled TikTok",
+                        "channel": data.get("author_name") or "Unknown TikToker",
+                        "views": None,
+                        "likes": None,
+                        "views_formatted": "N/A",
+                        "likes_formatted": "N/A",
+                        "video_id": str(data.get("embed_product_id")) if data.get("embed_product_id") else None,
+                    }
+            except Exception as oe:
+                print(f"[Metadata] TikTok oEmbed fallback error: {oe}")
+
         return {
             "title": "Untitled Video",
             "channel": "Unknown Channel",
@@ -45,6 +66,7 @@ def get_video_metadata(url: str) -> Dict[str, Any]:
             "likes": None,
             "views_formatted": "N/A",
             "likes_formatted": "N/A",
+            "video_id": None,
         }
 
 def extract_video_info(url: str) -> Tuple[str, Optional[str]]:

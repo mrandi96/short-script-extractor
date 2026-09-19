@@ -85,6 +85,8 @@ def background_extractor_worker(url: str, format_style: str):
         caps_future = executor.submit(get_native_youtube_captions, video_id) if (platform == "youtube" and video_id) else None
         
         metadata = meta_future.result()
+        if not video_id and metadata.get("video_id"):
+            video_id = metadata["video_id"]
         if caps_future:
             raw_text = caps_future.result()
             if raw_text:
